@@ -1,0 +1,28 @@
+[tools]
+bun = "1.3.9"
+
+[settings]
+experimental = true
+pin = true
+
+[hooks]
+postinstall = "bun install"
+
+[env]
+_.path = "node_modules/.bin"
+
+[tasks.dev]
+description = "Start local dev server"
+run = "wrangler dev"
+
+[tasks.deploy]
+description = "Deploy to Cloudflare"
+run = "wrangler deploy"
+
+[tasks.typecheck]
+description = "Run TypeScript type checker"
+run = "tsc --noEmit"
+
+[tasks.types]
+description = "Generate wrangler types"
+run = "wrangler types"

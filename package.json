@@ -1,0 +1,23 @@
+{
+  "name": "github-app-agent",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^8.2.0",
+    "agents": "^0.5.1",
+    "octokit": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "wrangler": "^4.67.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
