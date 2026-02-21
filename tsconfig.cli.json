@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ESNext"],
-    "jsx": "react-jsx",
+    "types": ["node"],
     "noEmit": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
@@ -13,9 +13,7 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "resolveJsonModule": true
+    "noImplicitOverride": true
   },
-  "include": ["src/**/*.ts", "worker-configuration.d.ts"],
-  "exclude": ["src/cli/**"]
+  "include": ["src/cli/**/*.ts"]
 }
