@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./types": "./src/types.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
