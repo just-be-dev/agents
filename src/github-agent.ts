@@ -1,35 +1,22 @@
 import { Agent, callable } from "agents";
+import { drizzle, type DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
+import { migrate } from "drizzle-orm/durable-sqlite/migrator";
+import { count, eq, desc } from "drizzle-orm";
+import { events } from "./schema.ts";
+import migrations from "./migrations.ts";
 import type { AgentState, StoredEvent } from "./types.ts";
 
 export class GitHubAgent extends Agent<Env, AgentState> {
+  db!: DrizzleSqliteDODatabase;
+
   override initialState: AgentState = {
     eventCount: 0,
     lastEvent: null,
   };
 
-  override onStart() {
-    this.sql`
-      CREATE TABLE IF NOT EXISTS events (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        action TEXT NOT NULL DEFAULT '',
-        title TEXT NOT NULL DEFAULT '',
-        description TEXT NOT NULL DEFAULT '',
-        url TEXT NOT NULL DEFAULT '',
-        actor TEXT NOT NULL DEFAULT '',
-        payload TEXT NOT NULL,
-        installation_id INTEGER,
-        timestamp TEXT NOT NULL
-      )
-    `;
-    this.sql`
-      CREATE INDEX IF NOT EXISTS idx_events_timestamp
-      ON events(timestamp DESC)
-    `;
-    this.sql`
-      CREATE INDEX IF NOT EXISTS idx_events_type
-      ON events(type)
-    `;
+  override async onStart() {
+    this.db = drizzle(this.ctx.storage);
+    await migrate(this.db, migrations);
   }
 
   override async onRequest(request: Request): Promise<Response> {
@@ -52,7 +39,11 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     }
 
     // Deduplicate by delivery ID
-    const existing = this.sql`SELECT id FROM events WHERE id = ${deliveryId}`;
+    const existing = this.db
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.id, deliveryId))
+      .all();
     if (existing.length > 0) {
       return new Response("Event already processed", { status: 200 });
     }
@@ -66,13 +57,24 @@ export class GitHubAgent extends Agent<Env, AgentState> {
       payload
     );
 
-    this.sql`
-      INSERT INTO events (id, type, action, title, description, url, actor, payload, installation_id, timestamp)
-      VALUES (${deliveryId}, ${eventType}, ${action}, ${title}, ${description}, ${url}, ${actor}, ${body}, ${installationId}, ${new Date().toISOString()})
-    `;
+    this.db.insert(events).values({
+      id: deliveryId,
+      type: eventType,
+      action,
+      title,
+      description,
+      url,
+      actor,
+      payload: body,
+      installation_id: installationId,
+      timestamp: new Date().toISOString(),
+    }).run();
 
     // Update agent state (broadcasts to WebSocket clients)
-    const countResult = this.sql<{ count: number }>`SELECT COUNT(*) as count FROM events`;
+    const countResult = this.db
+      .select({ count: count() })
+      .from(events)
+      .all();
     this.setState({
       eventCount: countResult[0]?.count ?? 0,
       lastEvent: {
@@ -90,21 +92,23 @@ export class GitHubAgent extends Agent<Env, AgentState> {
 
   @callable()
   getEvents(limit = 20): StoredEvent[] {
-    return this.sql<StoredEvent>`
-      SELECT * FROM events
-      ORDER BY timestamp DESC
-      LIMIT ${limit}
-    `;
+    return this.db
+      .select()
+      .from(events)
+      .orderBy(desc(events.timestamp))
+      .limit(limit)
+      .all();
   }
 
   @callable()
   getEventsByType(type: string, limit = 20): StoredEvent[] {
-    return this.sql<StoredEvent>`
-      SELECT * FROM events
-      WHERE type = ${type}
-      ORDER BY timestamp DESC
-      LIMIT ${limit}
-    `;
+    return this.db
+      .select()
+      .from(events)
+      .where(eq(events.type, type))
+      .orderBy(desc(events.timestamp))
+      .limit(limit)
+      .all();
   }
 
   @callable()
