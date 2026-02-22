@@ -1,4 +1,4 @@
-# Cloudflare Agents Monorepo
+# @just-be/agents
 
 A monorepo for building and deploying multiple AI agents as Cloudflare Workers with Durable Objects. Each agent is isolated in its own workspace but shares common packages and a unified deployment router.
 
