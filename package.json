@@ -1,32 +1,23 @@
 {
-  "name": "@just-be/github-agent",
+  "name": "@just-be/agents-monorepo",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "agents/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit",
-    "types": "wrangler types",
-    "build:cli": "bun build src/cli/index.ts --target=node --outdir=dist/cli"
-  },
-  "bin": {
-    "github-agent": "./dist/cli/index.js"
-  },
-  "files": [
-    "dist/cli"
-  ],
-  "dependencies": {
-    "@octokit/auth-app": "^8.2.0",
-    "agents": "^0.5.1",
-    "drizzle-orm": "^0.45.1",
-    "octokit": "^5.0.5"
+    "build:cli": "bun run --filter @just-be/github-agent build:cli",
+    "typecheck": "bun run --filter '*' typecheck"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^25.3.0",
-    "drizzle-kit": "^0.31.9",
+    "typescript": "^5",
     "wrangler": "^4.67.0"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "dependencies": {
+    "@just-be/github-agent": "workspace:*"
   }
 }

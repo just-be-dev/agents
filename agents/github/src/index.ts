@@ -1,11 +1,7 @@
 import { routeAgentRequest } from "agents";
-import { GitHubAgent } from "../agents/github/src/github-agent.ts";
+import { GitHubAgent } from "./github-agent.ts";
 
 export { GitHubAgent };
-
-interface Env {
-  GITHUB_AGENT: DurableObjectNamespace<GitHubAgent>;
-}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

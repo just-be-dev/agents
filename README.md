@@ -1,136 +1,288 @@
-# GitHub App Agent
+# @just-be/agents
 
-A GitHub App that runs as a Cloudflare Agent (Durable Object) using the [`agents`](https://www.npmjs.com/package/agents) SDK. It receives GitHub webhook events, verifies signatures, stores events in SQLite, and can respond via the GitHub API.
+A monorepo for building and deploying multiple AI agents as Cloudflare Workers with Durable Objects. Each agent is isolated in its own workspace but shares common packages and a unified deployment router.
 
-## Features
-
-- **Webhook handling** — Receives and verifies GitHub webhook events using Web Crypto (HMAC-SHA256)
-- **Per-repo isolation** — Each repository gets its own Durable Object instance with isolated state and storage
-- **Event storage** — Events stored in SQLite with deduplication by delivery ID
-- **GitHub API integration** — Authenticates as a GitHub App installation to comment, label, and react
-- **Real-time state** — WebSocket clients get live state updates when events arrive
-- **RPC methods** — Query events and trigger GitHub actions via `@callable()` methods
-
-## Prerequisites
-
-- [Bun](https://bun.sh) (managed via [mise](https://mise.jdx.dev))
-- [Cloudflare account](https://dash.cloudflare.com/sign-up)
-- A GitHub App (see setup below)
-
-## Setup
-
-### 1. Install dependencies
-
-```bash
-mise install   # installs Bun
-bun install    # installs packages
-```
-
-### 2. Create a GitHub App
-
-1. Go to **GitHub Settings > Developer settings > GitHub Apps > New GitHub App**
-2. Set the **Webhook URL** to your Worker URL + `/webhooks/github` (e.g., `https://github-app-agent.your-account.workers.dev/webhooks/github`)
-3. Set a **Webhook secret** — save this for later
-4. Under **Permissions**, grant at minimum:
-   - **Issues**: Read & Write (to comment on issues)
-   - **Pull requests**: Read & Write (to comment on PRs)
-   - **Metadata**: Read-only (required)
-5. Subscribe to events: **Issues**, **Pull request**, **Push** (or whichever you need)
-6. Create the app, then:
-   - Note the **App ID** from the app settings page
-   - Generate and download a **Private Key** (`.pem` file)
-
-### 3. Configure secrets
-
-For **local development**, edit `.dev.vars`:
+## Structure
 
 ```
-GITHUB_WEBHOOK_SECRET=your-webhook-secret
-GITHUB_APP_ID=123456
-GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
-```
-
-For **production**, use wrangler secrets:
-
-```bash
-wrangler secret put GITHUB_WEBHOOK_SECRET
-wrangler secret put GITHUB_APP_ID
-wrangler secret put GITHUB_PRIVATE_KEY
-```
-
-### 4. Run locally
-
-```bash
-mise run dev
-# or
-bun run dev
-```
-
-The dev server starts at `http://localhost:8787`.
-
-### 5. Deploy
-
-```bash
-mise run deploy
-# or
-bun run deploy
+agents/
+├── agents/          # Individual agent implementations
+│   └── github/      # GitHub App agent (webhook handler, issue/PR automation)
+├── packages/        # Shared code across agents (available for future use)
+├── src/             # Unified router (routes webhooks to specific agents)
+│   └── index.ts     # Entry point that routes to agent Durable Objects
+├── wrangler.jsonc   # Cloudflare Workers deployment configuration
+└── package.json     # Monorepo root with workspace configuration
 ```
 
 ## Architecture
 
+The monorepo uses a **router pattern** where a single Worker (`src/index.ts`) routes incoming requests to the appropriate agent Durable Object:
+
 ```
 POST /webhooks/github
-  → Worker (src/index.ts)
+  → Worker Router (src/index.ts)
     → Extract repo name from payload
-    → getAgentByName(env.GITHUB_AGENT, repoName)
-      → GitHubAgent Durable Object (src/github-agent.ts)
-        → Verify webhook signature (HMAC-SHA256)
-        → Store event in SQLite
-        → Update state (broadcasts to WebSocket clients)
-        → Handle event (e.g. issues.opened → auto-comment)
+    → Route to GitHubAgent Durable Object (agents/github/)
+      → Agent instance per repository (isolated state)
+      → SQLite storage, WebSocket state updates
+      → GitHub API integration
 
-WebSocket /agents/github-agent/:name
-  → routeAgentRequest(req, env)
-    → GitHubAgent Durable Object
-      → @callable() getEvents(), getEventsByType()
-      → @callable() commentOnIssue(), addLabel(), createReaction()
+GET /
+  → Status endpoint listing all available agents
 ```
 
-## Endpoints
+Each agent:
+- Runs as a **Durable Object** with isolated state and SQLite storage
+- Uses the [Agents SDK](https://www.npmjs.com/package/agents) for stateful WebSocket connections and RPC
+- Gets its own instance per resource (e.g., one GitHub agent per repository)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Status/info JSON |
-| POST | `/webhooks/github` | GitHub webhook receiver |
-| WS | `/agents/github-agent/:name` | WebSocket connection to an agent instance |
+## Getting Started
 
-## RPC Methods
+### Prerequisites
 
-Connect via WebSocket to call these methods:
+- [Bun](https://bun.sh) runtime (managed via [mise](https://mise.jdx.dev))
+- [Cloudflare account](https://dash.cloudflare.com/sign-up)
+- Wrangler CLI (installed via `bun install`)
 
-- `getEvents(limit?)` — Get recent events (default 20)
-- `getEventsByType(type, limit?)` — Get events filtered by type
-- `commentOnIssue(owner, repo, issueNumber, body, installationId)` — Post a comment
-- `addLabel(owner, repo, issueNumber, labels, installationId)` — Add labels
-- `createReaction(owner, repo, issueNumber, reaction, installationId)` — Add a reaction
+### Installation
 
-## Extending
+```bash
+# Install Bun via mise (if not already installed)
+mise install
 
-The example `issues.opened` handler in `src/github-agent.ts` demonstrates the full webhook → GitHub API round-trip. Add your own handlers in the `handleEvent` method:
+# Install all dependencies (for all workspaces)
+bun install
 
-```typescript
-private async handleEvent(eventType: string, action: string, payload: Record<string, unknown>) {
-  if (eventType === "pull_request" && action === "opened") {
-    // Your custom logic here
+# Type check all packages
+bun run typecheck
+```
+
+### Local Development
+
+```bash
+# Run the router worker locally with hot reload
+bun run dev
+
+# The dev server starts at http://localhost:8787
+# Test the status endpoint: curl http://localhost:8787
+```
+
+### Deployment
+
+```bash
+# Deploy the unified router and all agents to Cloudflare
+bun run deploy
+```
+
+The router worker will be deployed to your Cloudflare account with all configured Durable Object bindings.
+
+## Available Agents
+
+### GitHub Agent
+
+A GitHub App agent that handles webhook events, stores them in SQLite, and can respond via the GitHub API.
+
+- **Location**: `agents/github/`
+- **Webhook Path**: `/webhooks/github`
+- **Features**: Per-repo isolation, event storage, auto-commenting, WebSocket state
+- **Documentation**: See [agents/github/README.md](./agents/github/README.md)
+
+Example usage:
+```bash
+# GitHub webhooks are sent to:
+POST https://your-worker.workers.dev/webhooks/github
+```
+
+## Adding a New Agent
+
+Follow these steps to add a new agent to the monorepo:
+
+### 1. Create Agent Directory
+
+```bash
+mkdir -p agents/my-agent/src
+cd agents/my-agent
+```
+
+### 2. Create `package.json`
+
+```json
+{
+  "name": "@just-be/my-agent",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "agents": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "wrangler": "^4.67.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }
 ```
 
-## Development
+### 3. Implement Agent Class
+
+Create `agents/my-agent/src/my-agent.ts`:
+
+```typescript
+import { Agent } from "agents";
+
+export class MyAgent extends Agent {
+  constructor(state: DurableObjectState, env: Env) {
+    super(state, env);
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Handle webhooks or other requests
+    if (request.method === "POST" && url.pathname === "/webhook") {
+      // Process webhook
+      return Response.json({ status: "received" });
+    }
+
+    return new Response("Not found", { status: 404 });
+  }
+}
+```
+
+### 4. Add Router Integration
+
+Update `src/index.ts` to export your agent and add routing:
+
+```typescript
+import { MyAgent } from "../agents/my-agent/src/my-agent.ts";
+
+export { GitHubAgent, MyAgent };
+
+interface Env {
+  GITHUB_AGENT: DurableObjectNamespace<GitHubAgent>;
+  MY_AGENT: DurableObjectNamespace<MyAgent>;  // Add this
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Add your agent's route
+    if (url.pathname.startsWith("/webhooks/my-agent")) {
+      return handleMyAgentRoute(request, env);
+    }
+
+    // ... existing routes
+  },
+};
+
+async function handleMyAgentRoute(request: Request, env: Env): Promise<Response> {
+  // Get agent instance (use a name/ID scheme that makes sense)
+  const id = env.MY_AGENT.idFromName("default");
+  const stub = env.MY_AGENT.get(id);
+  return stub.fetch(request);
+}
+```
+
+### 5. Update Wrangler Configuration
+
+Add your agent to `wrangler.jsonc`:
+
+```jsonc
+{
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GITHUB_AGENT",
+        "class_name": "GitHubAgent",
+        "script_name": "agents-router"
+      },
+      {
+        "name": "MY_AGENT",
+        "class_name": "MyAgent",
+        "script_name": "agents-router"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GitHubAgent"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["MyAgent"]
+    }
+  ]
+}
+```
+
+### 6. Test and Deploy
 
 ```bash
-mise run typecheck  # Type check
-mise run types      # Regenerate wrangler types
-mise run dev        # Local dev server
-mise run deploy     # Deploy to Cloudflare
+# Type check your new agent
+bun run typecheck
+
+# Test locally
+bun run dev
+
+# Deploy to Cloudflare
+bun run deploy
 ```
+
+Your new agent is now available at `/webhooks/my-agent` (or whatever path you configured).
+
+## Development Commands
+
+```bash
+# Install dependencies for all workspaces
+bun install
+
+# Type check all packages
+bun run typecheck
+
+# Run development server (with hot reload)
+bun run dev
+
+# Deploy to Cloudflare Workers
+bun run deploy
+
+# Build GitHub agent CLI tool
+bun run build:cli
+```
+
+## Architecture Patterns
+
+### Per-Instance Isolation
+
+Agents use Durable Objects to provide per-resource isolation. For example:
+- GitHub agent: One instance per repository (`repo.full_name.replace("/", "-")`)
+- Slack agent: One instance per workspace/channel
+- Custom agent: One instance per user, organization, etc.
+
+### State Management
+
+Each agent instance has:
+- **Durable Object storage**: Key-value store for small state
+- **SQLite**: Relational database for structured data
+- **WebSocket connections**: Real-time state updates to clients
+
+### Webhook Routing
+
+The router extracts identifying information from webhooks and routes to the correct agent instance:
+
+```typescript
+// Example: Route GitHub webhooks by repository
+const agentName = repo.full_name.replace("/", "-");
+const id = env.GITHUB_AGENT.idFromName(agentName);
+const stub = env.GITHUB_AGENT.get(id);
+return stub.fetch(request);
+```
+
+## License
+
+MIT
