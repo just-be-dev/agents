@@ -19,7 +19,7 @@ run = "bun run dev"
 description = "Deploy to Cloudflare"
 run = "bun run deploy"
 
-[tasks.build:cli]
+[tasks."build:cli"]
 description = "Build the CLI"
 run = "bun run build:cli"
 
