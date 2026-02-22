@@ -1,0 +1,28 @@
+[tools]
+bun = "1.3.9"
+
+[settings]
+experimental = true
+pin = true
+
+[hooks]
+postinstall = "bun install"
+
+[env]
+_.path = "node_modules/.bin"
+
+[tasks.dev]
+description = "Start local dev server"
+run = "bun run dev"
+
+[tasks.deploy]
+description = "Deploy to Cloudflare"
+run = "bun run deploy"
+
+[tasks.build:cli]
+description = "Build the CLI"
+run = "bun run build:cli"
+
+[tasks.typecheck]
+description = "Run TypeScript type checker"
+run = "bun run typecheck"
