@@ -16,6 +16,5 @@
     "noImplicitOverride": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "worker-configuration.d.ts"],
-  "exclude": ["src/cli/**"]
+  "include": ["src/**/*.ts", "worker-configuration.d.ts"]
 }

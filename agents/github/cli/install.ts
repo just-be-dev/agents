@@ -83,7 +83,7 @@ function deployWorker(): string {
       "         Failed to deploy. Please deploy the worker first with `wrangler deploy`"
     );
     console.error(
-      "         and then run `github-agent install` again."
+      "         and then run `agents github install` again."
     );
     return process.exit(1) as never;
   }

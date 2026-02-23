@@ -26,3 +26,7 @@ run = "bun run build:cli"
 [tasks.typecheck]
 description = "Run TypeScript type checker"
 run = "bun run typecheck"
+
+[tasks.cli]
+description = "Run the agents CLI"
+run = "node dist/cli/index.js"
