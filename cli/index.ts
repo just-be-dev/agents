@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { commands as githubCommands } from "@just-be/github-agent/cli";
+import { commands as linearCommands } from "@just-be/linear-agent/cli";
 import type { CommandDefinition } from "@just-be/github-agent/cli";
 
 const agents: Record<string, Record<string, CommandDefinition>> = {
   github: githubCommands,
+  linear: linearCommands,
 };
 
 function parseFlags(args: string[]): Record<string, string | undefined> {

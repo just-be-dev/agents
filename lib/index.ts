@@ -1,10 +1,12 @@
 import { routeAgentRequest } from "agents";
 import { GitHubAgent } from "../agents/github/src/index.ts";
+import { LinearAgent } from "../agents/linear/src/index.ts";
 
-export { GitHubAgent };
+export { GitHubAgent, LinearAgent };
 
 interface Env {
   GITHUB_AGENT: DurableObjectNamespace<GitHubAgent>;
+  LINEAR_AGENT: DurableObjectNamespace<LinearAgent>;
 }
 
 type AgentModule = { default: { fetch(req: Request, env: Env): Promise<Response> } };
@@ -13,6 +15,7 @@ type AgentModule = { default: { fetch(req: Request, env: Env): Promise<Response>
 // adding one entry here; no routing logic needs to change.
 const agentRouters: Record<string, () => Promise<AgentModule>> = {
   github: () => import("../agents/github/src/index.ts"),
+  linear: () => import("../agents/linear/src/index.ts"),
 };
 
 export default {
