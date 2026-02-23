@@ -2,12 +2,15 @@ import { Agent, callable } from "agents";
 import { drizzle, type DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { migrate } from "drizzle-orm/durable-sqlite/migrator";
 import { count, eq, desc } from "drizzle-orm";
+import { Octokit } from "octokit";
+import { createAppAuth } from "@octokit/auth-app";
 import { events } from "./schema.ts";
 import migrations from "./migrations.ts";
 import type { AgentState, StoredEvent } from "./types.ts";
 
 export class GitHubAgent extends Agent<Env, AgentState> {
   db!: DrizzleSqliteDODatabase;
+  private oktokitCache = new Map<number, Octokit>();
 
   override initialState: AgentState = {
     eventCount: 0,
@@ -32,7 +35,11 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     }
 
     const deliveryId = request.headers.get("x-github-delivery");
-    const eventType = request.headers.get("x-github-event") ?? "unknown";
+    const eventType = request.headers.get("x-github-event");
+
+    if (!eventType) {
+      return new Response("Missing x-github-event header", { status: 400 });
+    }
 
     if (!deliveryId) {
       return new Response("Missing delivery ID", { status: 400 });
@@ -84,30 +91,37 @@ export class GitHubAgent extends Agent<Env, AgentState> {
       },
     });
 
-    // Handle specific events
-    await this.handleEvent(eventType, action, payload);
+    // Handle specific events — errors here must not affect the 200 response;
+    // the event is already stored and deduplication would skip a retry.
+    try {
+      await this.handleEvent(eventType, action, payload);
+    } catch (error) {
+      console.error("handleEvent failed:", error);
+    }
 
     return new Response("OK", { status: 200 });
   }
 
   @callable()
-  getEvents(limit = 20): StoredEvent[] {
+  getEvents(limit = 20, offset = 0): StoredEvent[] {
     return this.db
       .select()
       .from(events)
       .orderBy(desc(events.timestamp))
       .limit(limit)
+      .offset(offset)
       .all();
   }
 
   @callable()
-  getEventsByType(type: string, limit = 20): StoredEvent[] {
+  getEventsByType(type: string, limit = 20, offset = 0): StoredEvent[] {
     return this.db
       .select()
       .from(events)
       .where(eq(events.type, type))
       .orderBy(desc(events.timestamp))
       .limit(limit)
+      .offset(offset)
       .all();
   }
 
@@ -206,11 +220,11 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     }
   }
 
-  private async getOctokit(installationId: number) {
-    const { Octokit } = await import("octokit");
-    const { createAppAuth } = await import("@octokit/auth-app");
+  private getOctokit(installationId: number): Octokit {
+    const cached = this.oktokitCache.get(installationId);
+    if (cached) return cached;
 
-    return new Octokit({
+    const client = new Octokit({
       authStrategy: createAppAuth,
       auth: {
         appId: this.env.GITHUB_APP_ID,
@@ -218,6 +232,8 @@ export class GitHubAgent extends Agent<Env, AgentState> {
         installationId,
       },
     });
+    this.oktokitCache.set(installationId, client);
+    return client;
   }
 
   private async verifySignature(

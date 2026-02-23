@@ -50,7 +50,7 @@ export async function install(flags: InstallFlags): Promise<void> {
 
   // Step 4: Store secrets
   console.log("  [4/5] Storing secrets...");
-  await storeSecrets(credentials, webhookUrl);
+  await storeSecrets(credentials);
 
   // Step 5: Open installation page
   console.log("  [5/5] Opening installation page...\n");
@@ -63,9 +63,10 @@ export async function install(flags: InstallFlags): Promise<void> {
 
 function deployWorker(): string {
   try {
-    const output = execSync("npx wrangler deploy", {
+    const output = execSync("bunx wrangler deploy", {
       encoding: "utf-8",
       stdio: ["inherit", "pipe", "pipe"],
+      timeout: 120_000,
     });
 
     // Parse the worker URL from deploy output
@@ -78,12 +79,13 @@ function deployWorker(): string {
 
     console.log(`         Deployed to ${urlMatch[0]}`);
     return urlMatch[0];
-  } catch {
+  } catch (error) {
     console.error(
-      "         Failed to deploy. Please deploy the worker first with `wrangler deploy`"
+      "         Failed to deploy:",
+      error instanceof Error ? error.message : error
     );
     console.error(
-      "         and then run `agents github install` again."
+      "         Deploy manually with `bunx wrangler deploy`, then re-run with --webhook-url."
     );
     return process.exit(1) as never;
   }
@@ -111,43 +113,41 @@ async function exchangeCode(code: string): Promise<AppCredentials> {
   return response.json() as Promise<AppCredentials>;
 }
 
-async function storeSecrets(
-  credentials: AppCredentials,
-  webhookUrl: string
-): Promise<void> {
+async function storeSecrets(credentials: AppCredentials): Promise<void> {
   const secrets: Record<string, string> = {
     GITHUB_APP_ID: String(credentials.id),
     GITHUB_PRIVATE_KEY: credentials.pem,
     GITHUB_WEBHOOK_SECRET: credentials.webhook_secret,
   };
 
-  // Store to Cloudflare Workers via wrangler secret bulk (pipe JSON via stdin)
-  try {
-    const secretsJson = JSON.stringify(secrets);
-    const result = spawnSync("npx", ["wrangler", "secret", "bulk"], {
-      input: secretsJson,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    if (result.status !== 0) {
-      throw new Error(result.stderr || "wrangler secret bulk failed");
-    }
-    console.log("         Secrets stored to Cloudflare Workers");
-  } catch (error) {
-    console.error("         Failed to store secrets via wrangler. You can set them manually:");
-    console.error("         wrangler secret put GITHUB_APP_ID");
-    console.error("         wrangler secret put GITHUB_PRIVATE_KEY");
-    console.error("         wrangler secret put GITHUB_WEBHOOK_SECRET");
-  }
-
-  // Write .dev.vars for local development
+  // Write .dev.vars first so local dev is set up even if Cloudflare storage fails.
+  // Values are double-quoted and newlines escaped so PEM keys parse correctly.
   const devVarsPath = resolve(process.cwd(), ".dev.vars");
   const devVarsContent = Object.entries(secrets)
-    .map(([key, value]) => `${key}=${value}`)
+    .map(([k, v]) =>
+      `${k}="${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`
+    )
     .join("\n");
-
   writeFileSync(devVarsPath, devVarsContent + "\n");
   console.log("         Created .dev.vars for local development");
+
+  // Store to Cloudflare Workers via wrangler secret bulk (pipe JSON via stdin)
+  const secretsJson = JSON.stringify(secrets);
+  const result = spawnSync("bunx", ["wrangler", "secret", "bulk"], {
+    input: secretsJson,
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  if (result.status !== 0) {
+    const err = result.stderr || "wrangler secret bulk failed";
+    console.error(`\n  Failed to store secrets in Cloudflare: ${err}`);
+    console.error("  Set them manually:");
+    console.error("  bunx wrangler secret put GITHUB_APP_ID");
+    console.error("  bunx wrangler secret put GITHUB_PRIVATE_KEY");
+    console.error("  bunx wrangler secret put GITHUB_WEBHOOK_SECRET");
+    process.exit(1);
+  }
+  console.log("         Secrets stored to Cloudflare Workers");
 }
 
 function openBrowser(url: string): void {
