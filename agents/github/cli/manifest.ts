@@ -8,7 +8,7 @@ export function buildManifest(options: ManifestOptions) {
   return {
     url: "https://github.com/apps/replace-me",
     hook_attributes: {
-      url: `${options.webhookUrl}/webhooks/github`,
+      url: `${options.webhookUrl}/github`,
       active: true,
     },
     redirect_url: options.redirectUrl,

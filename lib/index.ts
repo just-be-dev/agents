@@ -1,5 +1,5 @@
 import { routeAgentRequest } from "agents";
-import { GitHubAgent } from "../agents/github/src/github-agent.ts";
+import { GitHubAgent } from "../agents/github/src/index.ts";
 
 export { GitHubAgent };
 
@@ -7,37 +7,23 @@ interface Env {
   GITHUB_AGENT: DurableObjectNamespace<GitHubAgent>;
 }
 
+type AgentModule = { default: { fetch(req: Request, env: Env): Promise<Response> } };
+
+// Map each URL path prefix to its agent module. Adding a new agent means
+// adding one entry here; no routing logic needs to change.
+const agentRouters: Record<string, () => Promise<AgentModule>> = {
+  github: () => import("../agents/github/src/index.ts"),
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const segment = url.pathname.split("/")[1];
 
-    if (url.pathname === "/webhooks/github") {
-      // Read body so we can route by installation + repo for per-instance isolation,
-      // then forward as a new Request so the agent can read it again.
-      const body = await request.text();
-      let routingKey = "github";
-
-      try {
-        const payload = JSON.parse(body) as Record<string, unknown>;
-        const installationId = (payload.installation as { id?: number } | undefined)?.id;
-        const repoName = (payload.repository as { full_name?: string } | undefined)?.full_name;
-        if (installationId != null && repoName) {
-          routingKey = `${installationId}/${repoName}`;
-        } else if (installationId != null) {
-          routingKey = String(installationId);
-        }
-      } catch {
-        // Malformed JSON — pass through; the agent will return the appropriate error.
-      }
-
-      const stub = env.GITHUB_AGENT.get(env.GITHUB_AGENT.idFromName(routingKey));
-      return stub.fetch(
-        new Request(request.url, {
-          method: request.method,
-          headers: request.headers,
-          body,
-        })
-      );
+    const loadRouter = agentRouters[segment];
+    if (loadRouter) {
+      const { default: handler } = await loadRouter();
+      return handler.fetch(request, env);
     }
 
     if (url.pathname === "/health") {
