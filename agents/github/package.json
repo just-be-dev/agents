@@ -4,15 +4,16 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit",
-    "types": "wrangler types",
-    "build:cli": "bun build src/cli/index.ts --target=node --outdir=dist/cli"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.cli.json",
+    "types": "wrangler types"
   },
-  "bin": {
-    "github-agent": "./dist/cli/index.js"
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./cli/index.ts"
   },
   "files": [
-    "dist/cli"
+    "src",
+    "cli"
   ],
   "dependencies": {
     "@octokit/auth-app": "^8.2.0",
