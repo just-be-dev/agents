@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
+  "packageManager": "bun@1.3.9",
   "workspaces": [
     "agents/*",
     "packages/*"
