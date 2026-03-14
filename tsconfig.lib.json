@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "resolveJsonModule": true
+  },
+  "include": ["lib/**/*.ts"],
+  "references": [
+    { "path": "./agents/github" },
+    { "path": "./agents/linear" }
+  ]
+}

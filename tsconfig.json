@@ -1,20 +1,11 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "jsx": "react-jsx",
-    "noEmit": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.lib.json" },
+    { "path": "./tsconfig.cli.json" },
+    { "path": "./agents/github" },
+    { "path": "./agents/github/tsconfig.cli.json" },
+    { "path": "./agents/linear" },
+    { "path": "./agents/linear/tsconfig.cli.json" }
+  ]
 }

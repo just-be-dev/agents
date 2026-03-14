@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.cli.json",
+    "typecheck": "tsgo --noEmit",
     "types": "wrangler types"
   },
   "dependencies": {
@@ -23,6 +23,7 @@
     "octokit": "^5.0.5"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260313.1",
     "@types/bun": "latest",
     "@types/node": "^25.3.0",
     "drizzle-kit": "^0.31.9",

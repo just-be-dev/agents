@@ -10,7 +10,7 @@
     "./cli": "./cli/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "types": "wrangler types"
   },
   "dependencies": {

@@ -1,23 +1,15 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext"],
     "types": ["node"],
-    "noEmit": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
     "paths": {
       "@just-be/github-agent/cli": ["./agents/github/cli/index.ts"],
       "@just-be/linear-agent/cli": ["./agents/linear/cli/index.ts"]
     }
   },
-  "include": ["cli/**/*.ts"]
+  "include": ["cli/**/*.ts"],
+  "references": [
+    { "path": "./agents/github/tsconfig.cli.json" },
+    { "path": "./agents/linear/tsconfig.cli.json" }
+  ]
 }
