@@ -48,7 +48,11 @@ https://linear.app/oauth/authorize?client_id=<CLIENT_ID>&redirect_uri=<REDIRECT>
 After authorizing, retrieve your workspace viewer ID via the GraphQL API:
 
 ```graphql
-query Me { viewer { id } }
+query Me {
+  viewer {
+    id
+  }
+}
 ```
 
 ### 4. Configure secrets
@@ -101,10 +105,10 @@ WebSocket /agents/linear-agent/:name
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/linear/webhook` | Linear AgentSessionEvent receiver |
-| WS | `/agents/linear-agent/:name` | WebSocket connection to an agent instance |
+| Method | Path                         | Description                               |
+| ------ | ---------------------------- | ----------------------------------------- |
+| POST   | `/linear/webhook`            | Linear AgentSessionEvent receiver         |
+| WS     | `/agents/linear-agent/:name` | WebSocket connection to an agent instance |
 
 ## RPC Methods
 
@@ -116,10 +120,10 @@ Connect via WebSocket to call these methods:
 
 Linear sends `AgentSessionEvent` webhooks with two key actions:
 
-| Action | Meaning | Agent Response |
-|--------|---------|----------------|
-| `created` | Issue assigned or agent mentioned | `thought` + `response` |
-| `prompted` | User added more context | `thought` + `response` |
+| Action     | Meaning                           | Agent Response         |
+| ---------- | --------------------------------- | ---------------------- |
+| `created`  | Issue assigned or agent mentioned | `thought` + `response` |
+| `prompted` | User added more context           | `thought` + `response` |
 
 ## Extending
 

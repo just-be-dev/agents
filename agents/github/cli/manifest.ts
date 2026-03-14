@@ -19,11 +19,7 @@ export function buildManifest(options: ManifestOptions) {
       contents: "read",
       metadata: "read",
     },
-    default_events: [
-      "issues",
-      "pull_request",
-      "push",
-    ],
+    default_events: ["issues", "pull_request", "push"],
   };
 }
 

@@ -76,7 +76,7 @@ export function startCallbackServer(options: {
 function renderFormPage(
   formUrl: string,
   manifest: ReturnType<typeof buildManifest>,
-  state: string
+  state: string,
 ): string {
   const manifestJson = JSON.stringify(manifest);
   return `<!DOCTYPE html>

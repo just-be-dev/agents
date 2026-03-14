@@ -3,10 +3,7 @@ import { GitHubAgent } from "./github-agent.ts";
 
 export { GitHubAgent };
 
-export async function routeGitHubWebhook(
-  request: Request,
-  env: Env
-): Promise<Response> {
+export async function routeGitHubWebhook(request: Request, env: Env): Promise<Response> {
   // Read body so we can route by installation + repo for per-instance isolation,
   // then forward as a new Request so the agent can read it again.
   const body = await request.text();
@@ -31,7 +28,7 @@ export async function routeGitHubWebhook(
       method: request.method,
       headers: request.headers,
       body,
-    })
+    }),
   );
 }
 
@@ -43,9 +40,6 @@ export default {
       return routeGitHubWebhook(request, env);
     }
 
-    return (
-      (await routeAgentRequest(request, env)) ??
-      new Response("Not found", { status: 404 })
-    );
+    return (await routeAgentRequest(request, env)) ?? new Response("Not found", { status: 404 });
   },
 };

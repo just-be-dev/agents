@@ -86,16 +86,12 @@
       "indexes": {
         "idx_events_timestamp": {
           "name": "idx_events_timestamp",
-          "columns": [
-            "timestamp"
-          ],
+          "columns": ["timestamp"],
           "isUnique": false
         },
         "idx_events_type": {
           "name": "idx_events_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         }
       },

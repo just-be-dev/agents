@@ -107,15 +107,21 @@ export class LinearAgent extends Agent<Env, AgentState> {
     try {
       if (action === "created") {
         await this.emitThought(session.id, `Reviewing issue ${session.issue?.identifier ?? ""}...`);
-        await this.emitResponse(session.id, `I've reviewed issue ${session.issue?.identifier ?? ""}. Let me know if you need anything specific.`);
+        await this.emitResponse(
+          session.id,
+          `I've reviewed issue ${session.issue?.identifier ?? ""}. Let me know if you need anything specific.`,
+        );
       } else if (action === "prompted") {
         await this.emitThought(session.id, "Considering your message...");
-        await this.emitResponse(session.id, "Thanks for the additional context. Let me know if there's anything else I can help with.");
+        await this.emitResponse(
+          session.id,
+          "Thanks for the additional context. Let me know if there's anything else I can help with.",
+        );
       }
     } catch (error) {
       console.error("handleSession failed:", error);
       await this.emitError(session.id, "An error occurred while processing your request.").catch(
-        (e) => console.error("emitError failed:", e)
+        (e) => console.error("emitError failed:", e),
       );
     }
   }
@@ -134,7 +140,7 @@ export class LinearAgent extends Agent<Env, AgentState> {
 
   private async emitActivity(
     sessionId: string,
-    content: { type: string; body?: string; action?: string; parameter?: string }
+    content: { type: string; body?: string; action?: string; parameter?: string },
   ): Promise<void> {
     const response = await fetch(LINEAR_GRAPHQL_URL, {
       method: "POST",
@@ -165,14 +171,10 @@ export class LinearAgent extends Agent<Env, AgentState> {
       encoder.encode(this.env.LINEAR_WEBHOOK_SIGNING_SECRET),
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign"]
+      ["sign"],
     );
 
-    const signatureBytes = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(payload)
-    );
+    const signatureBytes = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
 
     const expected = Array.from(new Uint8Array(signatureBytes))
       .map((b) => b.toString(16).padStart(2, "0"))

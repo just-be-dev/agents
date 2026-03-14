@@ -98,11 +98,11 @@ WebSocket /agents/github-agent/:name
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Status/info JSON |
-| POST | `/webhooks/github` | GitHub webhook receiver |
-| WS | `/agents/github-agent/:name` | WebSocket connection to an agent instance |
+| Method | Path                         | Description                               |
+| ------ | ---------------------------- | ----------------------------------------- |
+| GET    | `/`                          | Status/info JSON                          |
+| POST   | `/webhooks/github`           | GitHub webhook receiver                   |
+| WS     | `/agents/github-agent/:name` | WebSocket connection to an agent instance |
 
 ## RPC Methods
 

@@ -10,24 +10,24 @@
       {
         "name": "GITHUB_AGENT",
         "class_name": "GitHubAgent",
-        "script_name": "agents-router"
+        "script_name": "agents-router",
       },
       {
         "name": "LINEAR_AGENT",
         "class_name": "LinearAgent",
-        "script_name": "agents-router"
-      }
-    ]
+        "script_name": "agents-router",
+      },
+    ],
   },
 
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["GitHubAgent"]
+      "new_sqlite_classes": ["GitHubAgent"],
     },
     {
       "tag": "v2",
-      "new_sqlite_classes": ["LinearAgent"]
-    }
-  ]
+      "new_sqlite_classes": ["LinearAgent"],
+    },
+  ],
 }

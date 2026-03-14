@@ -33,9 +33,6 @@ export default {
       return new Response("OK", { status: 200 });
     }
 
-    return (
-      (await routeAgentRequest(request, env)) ??
-      new Response("Not found", { status: 404 })
-    );
+    return (await routeAgentRequest(request, env)) ?? new Response("Not found", { status: 404 });
   },
 };

@@ -59,29 +59,26 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     const action = payload.action ?? "";
     const installationId: number | null = payload.installation?.id ?? null;
 
-    const { title, description, url, actor } = this.extractEventInfo(
-      eventType,
-      payload
-    );
+    const { title, description, url, actor } = this.extractEventInfo(eventType, payload);
 
-    this.db.insert(events).values({
-      id: deliveryId,
-      type: eventType,
-      action,
-      title,
-      description,
-      url,
-      actor,
-      payload: body,
-      installation_id: installationId,
-      timestamp: new Date().toISOString(),
-    }).run();
+    this.db
+      .insert(events)
+      .values({
+        id: deliveryId,
+        type: eventType,
+        action,
+        title,
+        description,
+        url,
+        actor,
+        payload: body,
+        installation_id: installationId,
+        timestamp: new Date().toISOString(),
+      })
+      .run();
 
     // Update agent state (broadcasts to WebSocket clients)
-    const countResult = this.db
-      .select({ count: count() })
-      .from(events)
-      .all();
+    const countResult = this.db.select({ count: count() }).from(events).all();
     this.setState({
       eventCount: countResult[0]?.count ?? 0,
       lastEvent: {
@@ -131,7 +128,7 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     repo: string,
     issueNumber: number,
     body: string,
-    installationId: number
+    installationId: number,
   ): Promise<{ id: number }> {
     const octokit = await this.getOctokit(installationId);
     const response = await octokit.rest.issues.createComment({
@@ -149,7 +146,7 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     repo: string,
     issueNumber: number,
     labels: string[],
-    installationId: number
+    installationId: number,
   ): Promise<void> {
     const octokit = await this.getOctokit(installationId);
     await octokit.rest.issues.addLabels({
@@ -165,16 +162,8 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     owner: string,
     repo: string,
     issueNumber: number,
-    reaction:
-      | "+1"
-      | "-1"
-      | "laugh"
-      | "confused"
-      | "heart"
-      | "hooray"
-      | "rocket"
-      | "eyes",
-    installationId: number
+    reaction: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes",
+    installationId: number,
   ): Promise<void> {
     const octokit = await this.getOctokit(installationId);
     await octokit.rest.reactions.createForIssue({
@@ -190,7 +179,7 @@ export class GitHubAgent extends Agent<Env, AgentState> {
   private async handleEvent(
     eventType: string,
     action: string,
-    payload: Record<string, unknown>
+    payload: Record<string, unknown>,
   ): Promise<void> {
     // Example handler: welcome comment on new issues
     if (eventType === "issues" && action === "opened") {
@@ -211,7 +200,7 @@ export class GitHubAgent extends Agent<Env, AgentState> {
             repo.name,
             issue.number,
             `Thanks for opening this issue, @${issue.user.login}! We'll take a look soon.`,
-            installationId
+            installationId,
           );
         } catch (error) {
           console.error("Failed to post welcome comment:", error);
@@ -236,24 +225,17 @@ export class GitHubAgent extends Agent<Env, AgentState> {
     return client;
   }
 
-  private async verifySignature(
-    payload: string,
-    signature: string
-  ): Promise<boolean> {
+  private async verifySignature(payload: string, signature: string): Promise<boolean> {
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
       encoder.encode(this.env.GITHUB_WEBHOOK_SECRET),
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign"]
+      ["sign"],
     );
 
-    const signatureBytes = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(payload)
-    );
+    const signatureBytes = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
 
     const expected = `sha256=${Array.from(new Uint8Array(signatureBytes))
       .map((b) => b.toString(16).padStart(2, "0"))
@@ -271,7 +253,7 @@ export class GitHubAgent extends Agent<Env, AgentState> {
 
   private extractEventInfo(
     eventType: string,
-    payload: Record<string, unknown>
+    payload: Record<string, unknown>,
   ): {
     title: string;
     description: string;

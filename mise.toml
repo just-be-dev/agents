@@ -27,6 +27,19 @@ run = "bun run build:cli"
 description = "Run TypeScript type checker"
 run = "bun run typecheck"
 
+[tasks.lint]
+description = "Run oxlint"
+run = "oxlint"
+
+[tasks.format]
+alias = "fmt"
+description = "Format code with oxfmt"
+run = "oxfmt --write ."
+
+[tasks."format:check"]
+description = "Check code formatting with oxfmt"
+run = "oxfmt --check ."
+
 [tasks.cli]
 description = "Run the agents CLI"
 run = "node dist/cli/index.js"

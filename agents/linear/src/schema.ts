@@ -15,5 +15,5 @@ export const sessions = sqliteTable(
   (table) => [
     index("idx_sessions_workspace").on(table.workspace_id),
     index("idx_sessions_timestamp").on(table.timestamp),
-  ]
+  ],
 );

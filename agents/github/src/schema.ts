@@ -17,5 +17,5 @@ export const events = sqliteTable(
   (table) => [
     index("idx_events_timestamp").on(table.timestamp),
     index("idx_events_type").on(table.type),
-  ]
+  ],
 );

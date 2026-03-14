@@ -5,23 +5,21 @@
   "compatibility_date": "2025-12-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  "rules": [
-    { "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }
-  ],
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 
   "durable_objects": {
     "bindings": [
       {
         "name": "LINEAR_AGENT",
-        "class_name": "LinearAgent"
-      }
-    ]
+        "class_name": "LinearAgent",
+      },
+    ],
   },
 
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["LinearAgent"]
-    }
-  ]
+      "new_sqlite_classes": ["LinearAgent"],
+    },
+  ],
 }

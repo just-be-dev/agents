@@ -34,7 +34,11 @@ export async function install(flags: InstallFlags): Promise<void> {
 
   // Step 2: Start local server and open browser for manifest flow
   console.log("  [2/5] Starting GitHub App registration...");
-  const { url: localUrl, result, server } = await startCallbackServer({
+  const {
+    url: localUrl,
+    result,
+    server,
+  } = await startCallbackServer({
     webhookUrl,
     org: flags.org,
   });
@@ -80,34 +84,26 @@ function deployWorker(): string {
     console.log(`         Deployed to ${urlMatch[0]}`);
     return urlMatch[0];
   } catch (error) {
+    console.error("         Failed to deploy:", error instanceof Error ? error.message : error);
     console.error(
-      "         Failed to deploy:",
-      error instanceof Error ? error.message : error
-    );
-    console.error(
-      "         Deploy manually with `bunx wrangler deploy`, then re-run with --webhook-url."
+      "         Deploy manually with `bunx wrangler deploy`, then re-run with --webhook-url.",
     );
     return process.exit(1) as never;
   }
 }
 
 async function exchangeCode(code: string): Promise<AppCredentials> {
-  const response = await fetch(
-    `https://api.github.com/app-manifests/${code}/conversions`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    }
-  );
+  const response = await fetch(`https://api.github.com/app-manifests/${code}/conversions`, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(
-      `Failed to exchange code for credentials: ${response.status} ${body}`
-    );
+    throw new Error(`Failed to exchange code for credentials: ${response.status} ${body}`);
   }
 
   return response.json() as Promise<AppCredentials>;
@@ -124,8 +120,8 @@ async function storeSecrets(credentials: AppCredentials): Promise<void> {
   // Values are double-quoted and newlines escaped so PEM keys parse correctly.
   const devVarsPath = resolve(process.cwd(), ".dev.vars");
   const devVarsContent = Object.entries(secrets)
-    .map(([k, v]) =>
-      `${k}="${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`
+    .map(
+      ([k, v]) => `${k}="${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`,
     )
     .join("\n");
   writeFileSync(devVarsPath, devVarsContent + "\n");
@@ -165,11 +161,7 @@ function openBrowser(url: string): void {
   }
 }
 
-function printSummary(
-  credentials: AppCredentials,
-  webhookUrl: string,
-  org?: string
-): void {
+function printSummary(credentials: AppCredentials, webhookUrl: string, org?: string): void {
   console.log("  ─────────────────────────────────────────");
   console.log("  Setup complete!\n");
   console.log(`  App name:    ${credentials.slug}`);

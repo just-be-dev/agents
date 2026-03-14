@@ -33,6 +33,7 @@ GET /
 ```
 
 Each agent:
+
 - Runs as a **Durable Object** with isolated state and SQLite storage
 - Uses the [Agents SDK](https://www.npmjs.com/package/agents) for stateful WebSocket connections and RPC
 - Gets its own instance per resource (e.g., one GitHub agent per repository)
@@ -89,6 +90,7 @@ A GitHub App agent that handles webhook events, stores them in SQLite, and can r
 - **Documentation**: See [agents/github/README.md](./agents/github/README.md)
 
 Example usage:
+
 ```bash
 # GitHub webhooks are sent to:
 POST https://your-worker.workers.dev/webhooks/github
@@ -164,7 +166,7 @@ export { GitHubAgent, MyAgent };
 
 interface Env {
   GITHUB_AGENT: DurableObjectNamespace<GitHubAgent>;
-  MY_AGENT: DurableObjectNamespace<MyAgent>;  // Add this
+  MY_AGENT: DurableObjectNamespace<MyAgent>; // Add this
 }
 
 export default {
@@ -199,25 +201,25 @@ Add your agent to `wrangler.jsonc`:
       {
         "name": "GITHUB_AGENT",
         "class_name": "GitHubAgent",
-        "script_name": "agents-router"
+        "script_name": "agents-router",
       },
       {
         "name": "MY_AGENT",
         "class_name": "MyAgent",
-        "script_name": "agents-router"
-      }
-    ]
+        "script_name": "agents-router",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["GitHubAgent"]
+      "new_sqlite_classes": ["GitHubAgent"],
     },
     {
       "tag": "v2",
-      "new_sqlite_classes": ["MyAgent"]
-    }
-  ]
+      "new_sqlite_classes": ["MyAgent"],
+    },
+  ],
 }
 ```
 
@@ -260,6 +262,7 @@ bun run build:cli
 ### Per-Instance Isolation
 
 Agents use Durable Objects to provide per-resource isolation. For example:
+
 - GitHub agent: One instance per repository (`repo.full_name.replace("/", "-")`)
 - Slack agent: One instance per workspace/channel
 - Custom agent: One instance per user, organization, etc.
@@ -267,6 +270,7 @@ Agents use Durable Objects to provide per-resource isolation. For example:
 ### State Management
 
 Each agent instance has:
+
 - **Durable Object storage**: Key-value store for small state
 - **SQLite**: Relational database for structured data
 - **WebSocket connections**: Real-time state updates to clients
