@@ -1,23 +1,22 @@
-export type CommandDefinition = {
-  description: string;
-  flags?: Record<string, { description: string; required?: boolean }>;
-  action: (flags: Record<string, string | undefined>) => Promise<void>;
-};
+import { Cli, z } from "incur";
 
-export const commands: Record<string, CommandDefinition> = {
-  setup: {
-    description: "Print setup instructions for the Linear agent",
-    flags: {
-      workerUrl: {
-        description: "Your deployed Cloudflare Worker URL",
-        required: false,
-      },
-    },
-    action: async (flags) => {
-      const workerUrl = flags["workerUrl"] ?? "https://<your-worker>.workers.dev";
-      const webhookUrl = `${workerUrl}/linear/webhook`;
+export const cli = Cli.create("linear", {
+  description: "Linear agent commands",
+});
 
-      console.log(`
+cli.command("setup", {
+  description: "Print setup instructions for the Linear agent",
+  options: z.object({
+    workerUrl: z
+      .string()
+      .default("https://<your-worker>.workers.dev")
+      .describe("Your deployed Cloudflare Worker URL"),
+  }),
+  outputPolicy: "agent-only",
+  run({ options }) {
+    const webhookUrl = `${options.workerUrl}/linear/webhook`;
+
+    console.log(`
 Linear Agent Setup Instructions
 ================================
 
@@ -51,6 +50,7 @@ Linear Agent Setup Instructions
    In Linear, assign an issue to your agent or @mention it in a comment.
    You should see "thought" and "response" activities appear within seconds.
 `);
-    },
+
+    return { success: true };
   },
-};
+});

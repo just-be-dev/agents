@@ -1,21 +1,22 @@
 {
   "name": "@just-be/linear-agent",
-  "type": "module",
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "types": "wrangler types"
-  },
-  "exports": {
-    ".": "./src/index.ts",
-    "./cli": "./cli/index.ts"
-  },
   "files": [
     "src",
     "cli"
   ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./cli/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types"
+  },
   "dependencies": {
     "agents": "^0.5.1",
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.1",
+    "incur": "^0.3.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4",
